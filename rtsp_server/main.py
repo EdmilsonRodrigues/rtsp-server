@@ -5,7 +5,7 @@ import cv2
 import httpx
 import numpy as np
 from fastapi import FastAPI, Depends, HTTPException
-from fastapi.middleware import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from pyzbar.pyzbar import decode
