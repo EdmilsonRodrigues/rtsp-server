@@ -13,6 +13,8 @@ from pyzbar.pyzbar import decode
 HOST = "127.0.0.1"
 PORT = 8081
 SNAPSHOT_URL = urlparse("http://ip/cgi-bin/snapshot.cgi?chn=1")
+USERNAME = "admin"
+PASSWORD = "Sea2025@"
 
 app = FastAPI()
 
@@ -36,10 +38,10 @@ class QrCodeResponse(BaseModel):
 
 @app.get("/{ip}/snapshot", response_class=StreamingResponse)
 async def get_snapshot(ip: str, client: Annotated[httpx.AsyncClient, Depends(get_client)]):
-    url = SNAPSHOT_URL._replace(netloc="admin:Sea2025%40@"+ip)
+    url = SNAPSHOT_URL._replace(netloc=ip)
 
     async def stream_file():
-        async with client.stream("GET", url.geturl()) as response:
+        async with client.stream("GET", url.geturl(), auth=(USERNAME, PASSWORD)) as response:
             try:
                 response.raise_for_status()
             except Exception as exc:
