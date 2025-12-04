@@ -18,7 +18,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://admin-dev.sipub.com.br"],
+    allow_origins=["https://admin-dev.sipub.com.br", "localhost"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -36,7 +36,7 @@ class QrCodeResponse(BaseModel):
 
 @app.get("/{ip}/snapshot", response_class=StreamingResponse)
 async def get_snapshot(ip: str, client: Annotated[httpx.AsyncClient, Depends(get_client)]):
-    url = SNAPSHOT_URL._replace(netloc=ip)
+    url = SNAPSHOT_URL._replace(netloc="admin:Sea2025%40@"+ip)
 
     async def stream_file():
         async with client.stream("GET", url.geturl()) as response:
