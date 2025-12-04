@@ -18,7 +18,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://admin-dev.sipub.com.br"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -71,17 +71,6 @@ async def read_qrcode(ip: str, client: Annotated[httpx.AsyncClient, Depends(get_
     return QrCodeResponse(alias=alias, qrCode=qr_code)
 
 if __name__ == '__main__':
-    import os, sys, pathlib
-    if getattr(sys, 'frozen', False):
-        # If running as PyInstaller bundle
-        application_path = sys._MEIPASS
-    else:
-        # If running in development
-        application_path = os.path.dirname(os.path.abspath(__file__))
     import uvicorn
 
-    with (
-            open(pathlib.Path(application_path, 'log.txt'), 'w') as sys.stdout,
-            open(pathlib.Path(application_path, 'log.txt'), 'w') as sys.stderr
-    ):
-        uvicorn.run(app, host=HOST, port=PORT)
+    uvicorn.run(app, host=HOST, port=PORT)
