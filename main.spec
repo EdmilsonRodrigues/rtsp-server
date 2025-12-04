@@ -1,5 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
+import sys
 
+from pathlib import Path
+
+from pyzbar import pyzbar
 
 a = Analysis(
     ['rtsp_server/main.py'],
@@ -14,6 +19,12 @@ a = Analysis(
     noarchive=False,
     optimize=0,
 )
+
+a.binaries += TOC([
+    (Path(dep._name).name, dep._name, 'BINARY')
+    for dep in pyzbar.EXTERNAL_DEPENDENCIES
+])
+
 pyz = PYZ(a.pure)
 
 exe = EXE(
