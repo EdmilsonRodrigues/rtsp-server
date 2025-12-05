@@ -88,6 +88,7 @@ async def stream_file(client: httpx.AsyncClient, url: ParseResult):
             yield chunk
 
 def get_qr_code(content: bytes) -> QrCodeResponse:
+    content = clean_jpeg_data(content)
     image_array = np.asarray(bytearray(content), dtype=np.uint8)
     image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
     if image is None:
@@ -99,7 +100,31 @@ def get_qr_code(content: bytes) -> QrCodeResponse:
         raise HTTPException(500, "No QR Code Found")
     alias, qr_code = decoded_objects[0].data.decode('utf-8').split('-')
     return QrCodeResponse(alias=alias, qrcode=qr_code)
-            
+
+def clean_jpeg_data(data: bytes) -> bytes:
+    """
+    Clean JPEG data by finding the JPEG start (0xFFD8) and end (0xFFD9) markers.
+    Removes any extraneous bytes before/after the JPEG image.
+    """
+    # Find JPEG start marker (0xFF 0xD8)
+    start_marker = b'\xff\xd8'
+    start_pos = data.find(start_marker)
+    
+    if start_pos == -1:
+        # No JPEG marker found, return original
+        return data
+    
+    # Find JPEG end marker (0xFF 0xD9)
+    end_marker = b'\xff\xd9'
+    end_pos = data.rfind(end_marker)
+    
+    if end_pos == -1:
+        # No end marker found, try to decode anyway
+        return data[start_pos:]
+    
+    # Return clean JPEG (from start marker to end marker + 2 bytes)
+    return data[start_pos:end_pos + 2]
+
 @app.get("/{ip}/snapshot", response_class=StreamingResponse)
 async def get_snapshot(ip_address: IP_Address, client: HTTPClient):
     try:
@@ -121,10 +146,12 @@ async def read_qrcode(ip_address: IP_Address, client: HTTPClient):
         response = await client.get(url.geturl())
         response.raise_for_status()
 
+        
+
         return get_qr_code(response.content)
     except httpx.ConnectError as exc:
         raise HTTPException(500, "Failed connecting to server") from exc
-    except Exception as exc:
+    except httpx.HTTPStatusError as exc:
         raise HTTPException(response.status_code, str(exc)) from exc
 
 @app.get("/{ip}/flip", response_model=QrCodeResponse)
@@ -137,7 +164,7 @@ async def flip_camera(ip_address: IP_Address, client: HTTPClient):
         return get_qr_code(response.content)
     except httpx.ConnectError as exc:
         raise HTTPException(500, "Failed connecting to server") from exc
-    except Exception as exc:
+    except httpx.HTTPStatusError as exc:
         raise HTTPException(response.status_code, str(exc)) from exc
 
 if __name__ == '__main__':
